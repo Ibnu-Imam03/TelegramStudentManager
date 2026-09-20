@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="TelegramStudentManager.Bot/TelegramStudentManager.Bot.csproj" />
+  <Project Path="TelegramStudentManager.Business/TelegramStudentManager.Business.csproj" />
+  <Project Path="TelegramStudentManager.DataAccess/TelegramStudentManager.DataAccess.csproj" />
+  <Project Path="TelegramStudentManager/TelegramStudentManager.csproj" />
+</Solution>
