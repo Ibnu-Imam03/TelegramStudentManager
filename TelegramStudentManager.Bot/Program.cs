@@ -6,7 +6,6 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
-
 // ============================================================
 // BOT CONFIGURATION
 // ============================================================
@@ -17,9 +16,8 @@ var bot = new TelegramBotClient(botToken);
 
 var httpClient = new HttpClient();
 
-
 // ============================================================
-// CHECK BOT CONNECTION
+// BOT START
 // ============================================================
 
 var me = await bot.GetMe();
@@ -27,40 +25,25 @@ var me = await bot.GetMe();
 Console.WriteLine($"Bot started: @{me.Username}");
 Console.WriteLine("Waiting for messages...");
 
-
-// ============================================================
-// CANCELLATION TOKEN
-// ============================================================
-
 using CancellationTokenSource cts = new();
-
-
-// ============================================================
-// START RECEIVING TELEGRAM UPDATES
-// ============================================================
 
 bot.StartReceiving(
     updateHandler: HandleUpdateAsync,
     errorHandler: HandleErrorAsync,
-
     receiverOptions: new ReceiverOptions
     {
         AllowedUpdates = []
     },
-
     cancellationToken: cts.Token
 );
 
-
 Console.WriteLine("Press Enter to stop the bot.");
 
-
-// Keep the bot running
 await Task.Delay(Timeout.Infinite, cts.Token);
 
 
 // ============================================================
-// HANDLE TELEGRAM UPDATES
+// HANDLE UPDATE
 // ============================================================
 
 async Task HandleUpdateAsync(
@@ -68,94 +51,93 @@ async Task HandleUpdateAsync(
     Update update,
     CancellationToken cancellationToken)
 {
-    // --------------------------------------------------------
-    // HANDLE INLINE BUTTON CLICK
-    // --------------------------------------------------------
-
-    if (update.CallbackQuery is { } callbackQuery)
+    try
     {
-        await HandleStudentButton(
-            bot,
-            callbackQuery,
-            cancellationToken);
+        // ====================================================
+        // CALLBACK QUERY
+        // ====================================================
 
-        return;
-    }
+        if (update.CallbackQuery != null)
+        {
+            await HandleStudentButton(
+                bot,
+                update.CallbackQuery,
+                cancellationToken);
 
+            return;
+        }
 
-    // --------------------------------------------------------
-    // MAKE SURE UPDATE CONTAINS A MESSAGE
-    // --------------------------------------------------------
+        // ====================================================
+        // MESSAGE
+        // ====================================================
 
-    if (update.Message is not { } message)
-        return;
+        if (update.Message == null)
+            return;
 
+        if (update.Message.Text == null)
+            return;
 
-    // --------------------------------------------------------
-    // MAKE SURE MESSAGE CONTAINS TEXT
-    // --------------------------------------------------------
+        string messageText =
+            update.Message.Text.Trim();
 
-    if (message.Text is not { } messageText)
-        return;
+        // ====================================================
+        // /start
+        // ====================================================
 
+        if (messageText == "/start")
+        {
+            string miniAppUrl =
+                "https://marshy-mural-feel.ngrok-free.dev";
 
-    Console.WriteLine(
-        $"Received: {messageText} from {message.Chat.Id}");
+            InlineKeyboardMarkup keyboard =
+                new InlineKeyboardMarkup(
+                    InlineKeyboardButton.WithWebApp(
+                        "🚀 Open Student Manager",
+                        new WebAppInfo
+                        {
+                            Url = miniAppUrl
+                        }
+                    )
+                );
 
-
-    // ========================================================
-    // /start
-    // ========================================================
-
-    if (messageText == "/start")
-    {
-        string miniAppUrl =
-             "https://marshy-mural-feel.ngrok-free.dev";
-
-        InlineKeyboardMarkup keyboard =
-            new InlineKeyboardMarkup(
-                InlineKeyboardButton.WithWebApp(
-                    "🚀 Open Student Manager",
-                    new WebAppInfo
-                    {
-                        Url = miniAppUrl
-                    }
-                )
+            await bot.SendMessage(
+                chatId: update.Message.Chat.Id,
+                text:
+                    "👋 <b>Welcome to Student Manager!</b>\n\n" +
+                    "Manage your students easily from Telegram.\n\n" +
+                    "Tap the button below to get started.",
+                parseMode: ParseMode.Html,
+                replyMarkup: keyboard,
+                cancellationToken: cancellationToken
             );
 
-        await bot.SendMessage(
-            chatId: message.Chat.Id,
+            return;
+        }
 
-            text:
-                "👋 <b>Welcome to Student Manager!</b>\n\n" +
-                "Manage your students easily from Telegram.\n\n" +
-                "Tap the button below to get started.",
+        // ====================================================
+        // /list
+        // ====================================================
 
-            parseMode: ParseMode.Html,
+        if (messageText == "/list")
+        {
+            await GetStudents(
+                bot,
+                update.Message.Chat.Id,
+                cancellationToken);
 
-            replyMarkup: keyboard,
-
-            cancellationToken: cancellationToken
-        );
+            return;
+        }
     }
-
-
-    // ========================================================
-    // /list
-    // ========================================================
-
-    else if (messageText == "/list")
+    catch (Exception ex)
     {
-        await GetStudents(
-            bot,
-            message.Chat.Id,
-            cancellationToken);
+        Console.WriteLine(
+            $"Update Error: {ex.Message}");
     }
 }
 
 
 // ============================================================
-// GET ALL STUDENTS
+// GET STUDENTS
 // ============================================================
 
 async Task GetStudents(
@@ -165,49 +147,27 @@ async Task GetStudents(
 {
     try
     {
-        // ----------------------------------------------------
-        // API URL
-        // ----------------------------------------------------
-
         string apiUrl =
-            "http://localhost:5266/api/Students";
-
-
-        // ----------------------------------------------------
-        // CALL API
-        // ----------------------------------------------------
+            "https://telegram-student-manager-1.onrender.com/api/Students";
 
         List<Student>? students =
             await httpClient.GetFromJsonAsync<List<Student>>(
                 apiUrl,
                 cancellationToken);
 
-
-        // ----------------------------------------------------
-        // CHECK IF STUDENTS EXIST
-        // ----------------------------------------------------
-
         if (students == null || students.Count == 0)
         {
             await bot.SendMessage(
                 chatId: chatId,
-
                 text: "❌ No students found.",
-
                 cancellationToken: cancellationToken
             );
 
             return;
         }
 
-
-        // ----------------------------------------------------
-        // CREATE INLINE BUTTONS
-        // ----------------------------------------------------
-
         List<List<InlineKeyboardButton>> buttons =
             new List<List<InlineKeyboardButton>>();
-
 
         foreach (Student student in students)
         {
@@ -220,30 +180,16 @@ async Task GetStudents(
                 });
         }
 
-
-        // ----------------------------------------------------
-        // CREATE KEYBOARD
-        // ----------------------------------------------------
-
         InlineKeyboardMarkup keyboard =
             new InlineKeyboardMarkup(buttons);
 
-
-        // ----------------------------------------------------
-        // SEND STUDENT LIST
-        // ----------------------------------------------------
-
         await bot.SendMessage(
             chatId: chatId,
-
             text:
                 "📚 <b>Students</b>\n\n" +
                 "Select a student:",
-
             parseMode: ParseMode.Html,
-
             replyMarkup: keyboard,
-
             cancellationToken: cancellationToken
         );
     }
@@ -252,13 +198,10 @@ async Task GetStudents(
         Console.WriteLine(
             $"API Error: {ex.Message}");
 
-
         await bot.SendMessage(
             chatId: chatId,
-
             text:
                 "❌ Could not connect to the Student API.",
-
             cancellationToken: cancellationToken
         );
     }
@@ -274,110 +217,57 @@ async Task HandleStudentButton(
     CallbackQuery callbackQuery,
     CancellationToken cancellationToken)
 {
-    // --------------------------------------------------------
-    // CHECK CALLBACK DATA
-    // --------------------------------------------------------
-
     if (callbackQuery.Data == null)
         return;
-
 
     if (!callbackQuery.Data.StartsWith("student_"))
         return;
 
-
-    // --------------------------------------------------------
-    // GET STUDENT ID
-    // --------------------------------------------------------
-
     string idText =
         callbackQuery.Data.Replace("student_", "");
-
 
     if (!int.TryParse(idText, out int studentID))
         return;
 
-
     try
     {
-        // ----------------------------------------------------
-        // API URL
-        // ----------------------------------------------------
-
         string apiUrl =
-            $"http://localhost:5266/api/Students/{studentID}";
-
-
-        // ----------------------------------------------------
-        // GET STUDENT FROM API
-        // ----------------------------------------------------
+            $"https://telegram-student-manager-1.onrender.com/api/Students/{studentID}";
 
         Student? student =
             await httpClient.GetFromJsonAsync<Student>(
                 apiUrl,
                 cancellationToken);
 
-
-        // ----------------------------------------------------
-        // CHECK STUDENT
-        // ----------------------------------------------------
-
         if (student == null)
         {
             await bot.AnswerCallbackQuery(
                 callbackQuery.Id,
-
                 "Student not found.",
-
                 cancellationToken: cancellationToken
             );
 
             return;
         }
 
-
-        // ----------------------------------------------------
-        // ANSWER BUTTON CLICK
-        // ----------------------------------------------------
-
         await bot.AnswerCallbackQuery(
             callbackQuery.Id,
-
             cancellationToken: cancellationToken
         );
 
-
-        // ----------------------------------------------------
-        // CREATE STUDENT INFORMATION
-        // ----------------------------------------------------
-
         string response =
             "👤 <b>Student Information</b>\n\n" +
-
             $"🆔 ID: {student.StudentID}\n" +
-
             $"👤 Name: {student.FullName}\n" +
-
             $"🎓 Student Number: {student.StudentNumber}\n" +
-
             $"🏢 Department: {student.Department}\n" +
-
             $"📅 Year: {student.Year}\n" +
-
             $"📱 Phone: {student.Phone}";
-
-
-        // ----------------------------------------------------
-        // SEND STUDENT INFORMATION
-        // ----------------------------------------------------
 
         await bot.SendMessage(
             chatId: callbackQuery.Message!.Chat.Id,
-
             text: response,
-
             parseMode: ParseMode.Html,
-
             cancellationToken: cancellationToken
         );
     }
@@ -386,12 +276,9 @@ async Task HandleStudentButton(
         Console.WriteLine(
             $"API Error: {ex.Message}");
 
-
         await bot.AnswerCallbackQuery(
             callbackQuery.Id,
-
             "❌ Could not connect to the Student API.",
-
             cancellationToken: cancellationToken
         );
     }
@@ -399,7 +286,7 @@ async Task HandleStudentButton(
 
 
 // ============================================================
-// HANDLE BOT ERRORS
+// ERROR HANDLER
 // ============================================================
 
 Task HandleErrorAsync(
@@ -408,14 +295,14 @@ Task HandleErrorAsync(
     CancellationToken cancellationToken)
 {
     Console.WriteLine(
-        $"Bot Error: {exception.Message}");
+        $"Telegram Error: {exception.Message}");
 
     return Task.CompletedTask;
 }
 
 
 // ============================================================
-// STUDENT MODEL
+// STUDENT CLASS
 // ============================================================
 
 public class Student
