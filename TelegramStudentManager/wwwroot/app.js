@@ -18,7 +18,7 @@ if (tg) {
 // ============================================================
 
 // Your existing ASP.NET Core API
-const API_URL = "/api/Students";
+const API_URL = "https://telegram-student-manager-1.onrender.com/api/Students";
 
 // ============================================================
 // GLOBAL VARIABLES
