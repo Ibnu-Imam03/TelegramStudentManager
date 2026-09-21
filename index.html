@@ -1,0 +1,462 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Student Manager</title>
+
+    <!-- Telegram Mini App -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="style.css">
+
+</head>
+
+<body>
+
+    <div class="app">
+
+        <!-- ============================= -->
+        <!-- HEADER -->
+        <!-- ============================= -->
+
+        <header class="header">
+
+            <div>
+                <h1>Student Manager</h1>
+                <p id="welcomeText">Manage your students</p>
+            </div>
+
+            <div class="header-icon">
+                👨‍🎓
+            </div>
+
+        </header>
+
+
+        <!-- ============================= -->
+        <!-- DASHBOARD -->
+        <!-- ============================= -->
+
+        <section id="dashboardPage" class="page active">
+
+            <div class="welcome-card">
+
+                <div class="welcome-content">
+
+                    <span class="welcome-small">
+                        Welcome back 👋
+                    </span>
+
+                    <h2>Student Manager</h2>
+
+                    <p>
+                        Manage students quickly and easily.
+                    </p>
+
+                </div>
+
+                <div class="welcome-icon">
+                    🎓
+                </div>
+
+            </div>
+
+
+            <!-- STATISTICS -->
+
+            <div class="stats">
+
+                <div class="stat-card">
+
+                    <div class="stat-icon">
+                        👥
+                    </div>
+
+                    <div>
+                        <span>Total Students</span>
+                        <strong id="studentCount">0</strong>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- QUICK ACTIONS -->
+
+            <h3 class="section-title">
+                Quick Actions
+            </h3>
+
+            <div class="quick-actions">
+
+                <button class="action-card"
+                        onclick="openAddStudent()">
+
+                    <span class="action-icon add">
+                        ➕
+                    </span>
+
+                    <span>Add Student</span>
+
+                </button>
+
+
+                <button class="action-card"
+                        onclick="showStudentsPage()">
+
+                    <span class="action-icon students">
+                        👥
+                    </span>
+
+                    <span>Students</span>
+
+                </button>
+
+            </div>
+
+
+            <!-- RECENT STUDENTS -->
+
+            <div class="section-header">
+
+                <h3 class="section-title">
+                    Students
+                </h3>
+
+                <button class="see-all"
+                        onclick="showStudentsPage()">
+
+                    See all
+
+                </button>
+
+            </div>
+
+            <div id="recentStudents">
+
+                <div class="loading">
+                    Loading students...
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ============================= -->
+        <!-- STUDENTS PAGE -->
+        <!-- ============================= -->
+
+        <section id="studentsPage" class="page">
+
+            <div class="page-title-row">
+
+                <div>
+
+                    <h2>Students</h2>
+
+                    <p>
+                        Manage all students
+                    </p>
+
+                </div>
+
+                <button class="primary-small"
+                        onclick="openAddStudent()">
+
+                    ➕ Add
+
+                </button>
+
+            </div>
+
+
+            <!-- SEARCH -->
+
+            <div class="search-box">
+
+                <span>🔍</span>
+
+                <input type="text"
+                       id="searchInput"
+                       placeholder="Search students..."
+                       oninput="searchStudents()">
+
+            </div>
+
+
+            <!-- STUDENT LIST -->
+
+            <div id="studentList">
+
+                <div class="loading">
+                    Loading students...
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ============================= -->
+        <!-- STUDENT DETAILS -->
+        <!-- ============================= -->
+
+        <section id="detailsPage" class="page">
+
+            <button class="back-button"
+                    onclick="showStudentsPage()">
+
+                ← Back to Students
+
+            </button>
+
+
+            <div id="studentDetails">
+
+                <!-- JavaScript inserts details -->
+
+            </div>
+
+        </section>
+
+
+        <!-- ============================= -->
+        <!-- ADD / UPDATE FORM -->
+        <!-- ============================= -->
+
+        <section id="formPage" class="page">
+
+            <button class="back-button"
+                    onclick="showStudentsPage()">
+
+                ← Back
+
+            </button>
+
+
+            <div class="form-header">
+
+                <div class="form-header-icon">
+                    👨‍🎓
+                </div>
+
+                <div>
+
+                    <h2 id="formTitle">
+                        Add Student
+                    </h2>
+
+                    <p id="formSubtitle">
+                        Enter student information
+                    </p>
+
+                </div>
+
+            </div>
+
+
+            <!-- FORM -->
+
+            <form id="studentForm"
+                  onsubmit="saveStudent(event)">
+
+                <input type="hidden"
+                       id="studentID">
+
+
+                <!-- FULL NAME -->
+
+                <div class="form-group">
+
+                    <label for="fullName">
+                        Full Name
+                    </label>
+
+                    <input type="text"
+                           id="fullName"
+                           placeholder="Enter full name"
+                           required>
+
+                </div>
+
+
+                <!-- STUDENT NUMBER -->
+
+                <div class="form-group">
+
+                    <label for="studentNumber">
+                        Student Number
+                    </label>
+
+                    <input type="text"
+                           id="studentNumber"
+                           placeholder="Example: SE001"
+                           required>
+
+                </div>
+
+
+                <!-- DEPARTMENT -->
+
+                <div class="form-group">
+
+                    <label for="department">
+                        Department
+                    </label>
+
+                    <input type="text"
+                           id="department"
+                           placeholder="Example: Software Engineering"
+                           required>
+
+                </div>
+
+
+                <!-- YEAR -->
+
+                <div class="form-group">
+
+                    <label for="year">
+                        Year
+                    </label>
+
+                    <select id="year" required>
+
+                        <option value="">
+                            Select year
+                        </option>
+
+                        <option value="1">
+                            Year 1
+                        </option>
+
+                        <option value="2">
+                            Year 2
+                        </option>
+
+                        <option value="3">
+                            Year 3
+                        </option>
+
+                        <option value="4">
+                            Year 4
+                        </option>
+
+                        <option value="5">
+                            Year 5
+                        </option>
+
+                    </select>
+
+                </div>
+
+
+                <!-- PHONE -->
+
+                <div class="form-group">
+
+                    <label for="phone">
+                        Phone
+                    </label>
+
+                    <input type="tel"
+                           id="phone"
+                           placeholder="Example: 0912345678"
+                           required>
+
+                </div>
+
+
+                <!-- BUTTONS -->
+
+                <div class="form-buttons">
+
+                    <button type="button"
+                            class="secondary-button"
+                            onclick="showStudentsPage()">
+
+                        Cancel
+
+                    </button>
+
+
+                    <button type="submit"
+                            class="primary-button"
+                            id="saveButton">
+
+                        Save Student
+
+                    </button>
+
+                </div>
+
+            </form>
+
+        </section>
+
+
+        <!-- ============================= -->
+        <!-- BOTTOM NAVIGATION -->
+        <!-- ============================= -->
+
+        <nav class="bottom-nav">
+
+            <button class="nav-item active"
+                    id="homeNav"
+                    onclick="showHomePage()">
+
+                <span>🏠</span>
+                <small>Home</small>
+
+            </button>
+
+
+            <button class="nav-item"
+                    id="studentsNav"
+                    onclick="showStudentsPage()">
+
+                <span>👥</span>
+                <small>Students</small>
+
+            </button>
+
+
+            <button class="nav-item"
+                    onclick="openAddStudent()">
+
+                <span>➕</span>
+                <small>Add</small>
+
+            </button>
+
+        </nav>
+
+
+        <!-- ============================= -->
+        <!-- MESSAGE -->
+        <!-- ============================= -->
+
+        <div id="message"
+             class="message">
+
+        </div>
+
+    </div>
+
+
+    <!-- JavaScript -->
+
+    <script src="app.js"></script>
+
+</body>
+
+</html>
